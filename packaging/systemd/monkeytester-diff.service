@@ -1,0 +1,31 @@
+# User unit (Linux), DIFF test plugin: SNAPSHOT image diffs and ASSERT_LAYOUT
+# checks for MonkeyTester (:8095).
+# Install:
+#   cp packaging/systemd/monkeytester-diff.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now monkeytester-diff
+# Edit WorkingDirectory to this checkout. Then add http://127.0.0.1:8095 on the
+# viewer's Settings → Plugins page (Test Plugins Add row).
+[Unit]
+Description=MonkeyTester DIFF test plugin (:8095)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/Workspace/MonkeyTester-Plugin-Diff
+ExecStart=/usr/bin/env nix run .
+# Without Nix: ExecStart=/usr/bin/env python3 diff_plugin.py
+Environment=PLUGIN_PORT=8095
+# Network access (SECURITY.md): the plugin API listens on 127.0.0.1 by default,
+# which is what the viewer on this host uses (http://127.0.0.1:8095). To expose it
+# on the LAN, set BOTH lines below; without a token (>= 16 chars) the plugin
+# refuses to start on a non-loopback address. Prefer a drop-in
+# (systemctl --user edit monkeytester-diff) so the token stays out of this
+# file, and enter the same token in the viewer's Settings.
+#Environment=PLUGIN_BIND=0.0.0.0
+#Environment=PLUGIN_TOKEN=<openssl rand -hex 32>
+# Where uploads wait for their job (default: <tmp>/mt-diff-uploads):
+#Environment=PLUGIN_UPLOAD_DIR=%h/.cache/mt-diff-uploads
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
